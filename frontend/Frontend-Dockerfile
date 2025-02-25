@@ -9,9 +9,9 @@ COPY package*.json ./
 
 # Install dependencies efficiently
 
-RUN rm -rf package-lock.json node_modules
-RUN npm cache clean --force
-RUN npm install
+# RUN rm -rf package-lock.json node_modules
+# RUN npm cache clean --force
+RUN npm i
 
 # Copy application source
 COPY . .
