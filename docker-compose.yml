@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Frontend-Dockerfile
+    container_name: frontend
+    ports:
+      - "${PORT}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - auth
+      - todo
+
+  auth:
+    build:
+      context: ./auth-api
+      dockerfile: Auth-Dockerfile
+    container_name: auth
+    ports:
+      - "${AUTH_API_PORT}:8081"
+    env_file:
+      - .env
+    depends_on:
+      - users
+
+  todo:
+    build:
+      context: ./todos-api
+      dockerfile: Todo-Dockerfile
+    container_name: todo
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  users:
+    build:
+      context: ./users-api
+      dockerfile: User-Dockerfile
+    container_name: user
+    ports:
+      - "${SERVER_PORT}:8083"
+    env_file:
+      - .env
+
+  log-processor:
+    build:
+      context: ./log-message-processor
+      dockerfile: Log-Dockerfile
+    container_name: log
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    env_file:
+      - .env

@@ -1,26 +1,40 @@
-# frontend
+# Build Stage
+FROM node:14-alpine AS build-stage
 
-UI for sample distributed TODO app build with VueJS
+# Set working directory
+WORKDIR /app
 
-## requirements
-- node:14
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
-## ENV Configuration
-- `PORT` - a port the application binds to
-- `AUTH_API_ADDRESS` - address of `auth-api` for authentication
-- `TODOS_API_ADDRESS` - address of `todos-api` for TODO CRUD
+# Install dependencies
+RUN npm install
 
-## Building and running locally
+# Copy the rest of the application
+COPY . .
 
-``` bash
-# install dependencies
-npm install
+# Build the Vue.js application
+RUN npm run build
 
-# serve with hot reload at localhost:8080
-npm run dev
+# Production Stage: Serve using Nginx
+FROM nginx:alpine AS production-stage
 
-# build for production
-npm run build
+# Set working directory
+WORKDIR /usr/share/nginx/html
 
-```
+# Remove default Nginx static files
+RUN rm -rf ./*
 
+# Copy the built frontend from the build stage
+COPY --from=build-stage /app/dist ./
+
+# Expose the port Vue.js runs on
+EXPOSE 80
+
+# Set default environment variables (can be overridden at runtime)
+ENV PORT=80 \
+    AUTH_API_ADDRESS=http://auth-api:8081 \
+    TODOS_API_ADDRESS=http://todos-api:8082
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]

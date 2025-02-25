@@ -1,0 +1,29 @@
+# Use an official Node.js runtime as a parent image
+FROM node:18-alpine AS build-stage
+
+# Set working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application
+COPY . .
+
+# Build the Vue.js application
+RUN npm run build
+
+# Use Nginx for serving the static files
+FROM nginx:1.23-alpine AS production-stage
+
+# Copy the built app from the previous stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]

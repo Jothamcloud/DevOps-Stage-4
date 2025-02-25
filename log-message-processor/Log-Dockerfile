@@ -1,0 +1,25 @@
+# Use official Python image as base
+FROM python:3.11-slim
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy requirements file first (for better caching)
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
+COPY . .
+
+# Expose any required ports (optional, since Redis Pub/Sub doesn't require direct external access)
+EXPOSE 8000
+
+# Set default environment variables (can be overridden at runtime)
+ENV REDIS_HOST=redis \
+    REDIS_PORT=6379 \
+    REDIS_CHANNEL=log_channel
+
+# Run the application
+CMD ["python3", "main.py"]
