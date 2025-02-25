@@ -1,6 +1,6 @@
 # Build Stage: Use Maven to build the application
-# FROM maven:3.9.6-eclipse-temurin-11 AS build-stage
-FROM eclipse-temurin:8-jre-alpine
+FROM maven:3.9.6-eclipse-temurin-11 AS build-stage
+# FROM eclipse-temurin:8-jre-alpine
 
 # Downgrade to Java 11 for Spring Boot 4.3.10 compatibility
 
@@ -38,4 +38,5 @@ ENV JWT_SECRET=DZ5O1JxC96rER4wsvh4r2/bLPKhnrl2TbO5dFq9Kyas= \
     SERVER_PORT=8083
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "--add-modules=java.xml.bind", "-jar", "app.jar"]
