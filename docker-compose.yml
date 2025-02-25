@@ -72,6 +72,6 @@ services:
     image: openzipkin/zipkin
     container_name: zipkin
     ports:
-      - "9411:9411"
+      - "80:9411"
     env_file:
       - .env
