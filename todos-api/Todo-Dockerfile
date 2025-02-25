@@ -17,11 +17,11 @@ COPY . .
 EXPOSE 8082
 
 # Set default environment variables (can be overridden at runtime)
-# ENV TODO_API_PORT=8082 \
-#     JWT_SECRET=foo \
-#     REDIS_HOST=redis \
-#     REDIS_PORT=6379 \
-#     REDIS_CHANNEL=log_channel
+ENV TODO_API_PORT=8082 \
+    JWT_SECRET=DZ5O1JxC96rER4wsvh4r2/bLPKhnrl2TbO5dFq9Kyas= \
+    REDIS_HOST=redis \
+    REDIS_PORT=6379 \
+    REDIS_CHANNEL=log_channel
 
 # Start the application
 CMD ["npm", "start"]
