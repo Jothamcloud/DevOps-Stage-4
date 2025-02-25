@@ -11,7 +11,7 @@ COPY package*.json ./
 
 RUN rm -rf package-lock.json node_modules
 RUN npm cache clean --force
-RUN Cnpm install
+RUN npm install
 
 # Copy application source
 COPY . .
