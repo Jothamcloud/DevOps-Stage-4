@@ -6,8 +6,8 @@ services:
       context: ./frontend
       dockerfile: Frontend-Dockerfile
     container_name: frontend
-    # ports:
-    #   - "${PORT}:8080"
+    ports:
+      - "8080:80"
     env_file:
       - .env
     depends_on:
