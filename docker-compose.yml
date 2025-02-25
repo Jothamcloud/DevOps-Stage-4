@@ -9,7 +9,6 @@ services:
     ports:
       - "8080:80"
       - "9411:9411"
-
     env_file:
       - .env
     depends_on:
