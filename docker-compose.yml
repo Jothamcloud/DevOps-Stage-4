@@ -1,0 +1,73 @@
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-api
+      - todos-api
+      - users-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`3.86.38.7`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+
+  auth-api:
+    build: ./auth-api
+    ports:
+      - "8081:8081"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-api.rule=Host(`auth.3.86.38.7`)"
+      - "traefik.http.routers.auth-api.entrypoints=websecure"
+      - "traefik.http.routers.auth-api.tls.certresolver=myresolver"
+
+  todos-api:
+    build: ./todos-api
+    ports:
+      - "8082:8082"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos-api.rule=Host(`todos.3.86.38.7`)"
+      - "traefik.http.routers.todos-api.entrypoints=websecure"
+      - "traefik.http.routers.todos-api.tls.certresolver=myresolver"
+
+  users-api:
+    build: ./users-api
+    ports:
+      - "8083:8083"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users-api.rule=Host(`users.3.86.38.7`)"
+      - "traefik.http.routers.users-api.entrypoints=websecure"
+      - "traefik.http.routers.users-api.tls.certresolver=myresolver"
+
+  log-processor:
+    build: ./log-processor
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  traefik:
+    image: traefik:v2.6
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=blessingomoregie66@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock

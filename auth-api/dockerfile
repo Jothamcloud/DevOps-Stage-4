@@ -1,0 +1,8 @@
+FROM golang:1.19-alpine
+WORKDIR /app
+COPY auth-api/go.mod auth-api/go.sum ./
+RUN  go mod download
+COPY auth-api/ .
+RUN go build -o main .
+EXPOSE 8081
+CMD ["./main"]

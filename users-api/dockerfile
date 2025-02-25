@@ -1,0 +1,10 @@
+FROM maven:3.8.6-openjdk-17 as build-stage
+WORKDIR /app
+COPY . .
+RUN mvn clean package
+
+FROM openjdk:17-jdk-alpine
+WORKDIR /app
+COPY --from=build-stage /app/target/users-api.jar .
+EXPOSE 8083
+CMD ["java", "-jar", "users-api.jar"]
