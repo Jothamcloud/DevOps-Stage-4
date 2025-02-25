@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
     bison
 
 # Install thriftpy2 before requirements.txt
-RUN pip install --no-cache-dir thriftpy
+RUN pip install --no-cache-dir thriftpy2
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
