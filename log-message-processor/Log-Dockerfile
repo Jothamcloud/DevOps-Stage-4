@@ -7,8 +7,7 @@ WORKDIR /app
 # Copy requirements file first (for better caching)
 COPY requirements.txt .
 
-RUN apt-get update && apt-get install -y gcc python3-dev
-
+# Install system dependencies required for building Python packages
 RUN apt-get update && apt-get install -y \
     gcc \
     python3-dev \
@@ -19,23 +18,25 @@ RUN apt-get update && apt-get install -y \
     python3-setuptools \
     python3-wheel \
     flex \
-    bison
+    bison \
+    && apt-get clean
 
-# Install thriftpy2 before requirements.txt
+# Upgrade pip first to avoid old dependencies issues
+RUN pip install --upgrade pip setuptools wheel
+
+# Install thriftpy2 before installing requirements
 RUN pip install --no-cache-dir thriftpy2
 
-RUN pip install --upgrade py_zipkin
-
-# Install dependencies
+# Install requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
 
-# Expose any required ports (optional, since Redis Pub/Sub doesn't require direct external access)
+# Expose required ports
 EXPOSE 8000
 
-# Set default environment variables (can be overridden at runtime)
+# Set environment variables
 ENV REDIS_HOST=redis \
     REDIS_PORT=6379 \
     REDIS_CHANNEL=log_channel
