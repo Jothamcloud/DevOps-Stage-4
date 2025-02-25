@@ -68,10 +68,10 @@ services:
     env_file:
       - .env
 
-  zipkin:
-    image: openzipkin/zipkin
-    container_name: zipkin
-    ports:
-      - "9411:80"
-    env_file:
-      - .env
+  # zipkin:
+  #   image: openzipkin/zipkin
+  #   container_name: zipkin
+  #   ports:
+  #     - "9411:80"
+  #   env_file:
+  #     - .env
