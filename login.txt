@@ -1,0 +1,5 @@
+#login details
+# USERNAME    PASSWORD
+admin Admin123
+hng HngTech
+user Password
