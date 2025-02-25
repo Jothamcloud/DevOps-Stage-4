@@ -1,5 +1,7 @@
 # Build Stage: Use Maven to build the application
-FROM maven:3.9.6-eclipse-temurin-11 AS build-stage
+# FROM maven:3.9.6-eclipse-temurin-11 AS build-stage
+FROM eclipse-temurin:8-jre-alpine
+
 # Downgrade to Java 11 for Spring Boot 4.3.10 compatibility
 
 # Set working directory
