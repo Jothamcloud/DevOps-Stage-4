@@ -10,6 +10,8 @@ COPY package*.json ./
 # Install dependencies efficiently
 RUN npm ci
 
+RUN npm install
+
 # Copy application source
 COPY . .
 
