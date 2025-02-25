@@ -1,8 +1,8 @@
 require('./check-versions')()
 
 var config = require('../config')
-if (!process.env.NODE_ENV) {
-  process.env.NODE_ENV = JSON.parse(config.dev.env.NODE_ENV)
+if (!process.env.VUE_APP_NODE_ENV) {
+  process.env.VUE_APP_NODE_ENV = JSON.parse(config.dev.env.VUE_APP_NODE_ENV)
 }
 
 var opn = require('opn')
@@ -13,7 +13,7 @@ var proxyMiddleware = require('http-proxy-middleware')
 var webpackConfig = require('./webpack.dev.conf')
 
 // default port where dev server listens for incoming traffic
-var port = process.env.PORT || config.dev.port || 8080
+var port = process.env.VUE_APP_PORT || config.dev.port || 8080
 // automatically open browser, if not set will be false
 var autoOpenBrowser = !!config.dev.autoOpenBrowser
 // Define HTTP proxies to your custom API backend
@@ -74,7 +74,7 @@ console.log('> Starting dev server...')
 devMiddleware.waitUntilValid(() => {
   console.log('> Listening at ' + uri + '\n')
   // when env is testing, don't need open it
-  if (autoOpenBrowser && process.env.NODE_ENV !== 'testing') {
+  if (autoOpenBrowser && process.env.VUE_APP_NODE_ENV !== 'testing') {
     opn(uri)
   }
   _resolve()

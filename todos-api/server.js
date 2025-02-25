@@ -3,7 +3,7 @@ const express = require('express')
 const bodyParser = require("body-parser")
 const jwt = require('express-jwt')
 
-const ZIPKIN_URL = process.env.ZIPKIN_URL || 'http://127.0.0.1:9411/api/v2/spans';
+const ZIPKIN_URL = process.env.VUE_APP_ZIPKIN_URL || 'http://127.0.0.1:9411/api/v2/spans';
 const {Tracer, 
   BatchRecorder,
   jsonEncoder: {JSON_V2}} = require('zipkin');
@@ -11,10 +11,10 @@ const {Tracer,
 const {HttpLogger} = require('zipkin-transport-http');
 const zipkinMiddleware = require('zipkin-instrumentation-express').expressMiddleware;
 
-const logChannel = process.env.REDIS_CHANNEL || 'log_channel';
+const logChannel = process.env.VUE_APP_REDIS_CHANNEL || 'log_channel';
 const redisClient = require("redis").createClient({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
+  host: process.env.VUE_APP_REDIS_HOST || 'localhost',
+  port: process.env.VUE_APP_REDIS_PORT || 6379,
   retry_strategy: function (options) {
       if (options.error && options.error.code === 'ECONNREFUSED') {
           return new Error('The server refused the connection');
@@ -29,8 +29,8 @@ const redisClient = require("redis").createClient({
       return Math.min(options.attempt * 100, 2000);
   }        
 });
-const port = process.env.TODO_API_PORT || 8082
-const jwtSecret = process.env.JWT_SECRET || "foo"
+const port = process.env.VUE_APP_TODO_API_PORT || 8082
+const jwtSecret = process.env.VUE_APP_JWT_SECRET || "foo"
 
 const app = express()
 
