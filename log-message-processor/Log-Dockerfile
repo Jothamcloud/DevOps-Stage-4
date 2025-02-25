@@ -24,6 +24,8 @@ RUN apt-get update && apt-get install -y \
 # Install thriftpy2 before requirements.txt
 RUN pip install --no-cache-dir thriftpy2
 
+RUN pip install --upgrade py_zipkin
+
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
