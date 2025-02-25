@@ -1,5 +1,5 @@
 # Use official Python image as base
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Set working directory inside the container
 WORKDIR /app
@@ -17,7 +17,12 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     python3-pip \
     python3-setuptools \
-    python3-wheel
+    python3-wheel \
+    flex \
+    bison
+
+# Install thriftpy2 before requirements.txt
+RUN pip install --no-cache-dir thriftpy2
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
