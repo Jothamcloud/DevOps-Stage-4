@@ -9,6 +9,15 @@ COPY requirements.txt .
 
 RUN apt-get update && apt-get install -y gcc python3-dev
 
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    libffi-dev \
+    build-essential \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel
+
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
