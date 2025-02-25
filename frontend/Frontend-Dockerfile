@@ -8,10 +8,9 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies efficiently
-RUN npm ci
 
 RUN npm install
-
+RUN npm ci
 # Copy application source
 COPY . .
 
