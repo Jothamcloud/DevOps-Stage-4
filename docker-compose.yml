@@ -75,3 +75,7 @@ services:
   #     - "9411:80"
   #   env_file:
   #     - .env
+
+networks:
+  default:
+    name: devops_network
