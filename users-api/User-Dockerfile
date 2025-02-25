@@ -31,8 +31,8 @@ COPY --from=build-stage /app/target/users-api-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8083
 
 # Set default environment variables (can be overridden at runtime)
-ENV JWT_SECRET=DZ5O1JxC96rER4wsvh4r2/bLPKhnrl2TbO5dFq9Kyas= \
-    SERVER_PORT=8083
+# ENV JWT_SECRET=DZ5O1JxC96rER4wsvh4r2/bLPKhnrl2TbO5dFq9Kyas= \
+#     SERVER_PORT=8083
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]

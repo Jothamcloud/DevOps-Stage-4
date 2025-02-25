@@ -27,9 +27,9 @@ COPY --from=build-stage /app/auth-api .
 EXPOSE 8081
 
 # Set default environment variables (can be overridden at runtime)
-ENV AUTH_API_PORT=8081 \
-    USERS_API_ADDRESS=http://user:8083 \
-    JWT_SECRET=DZ5O1JxC96rER4wsvh4r2/bLPKhnrl2TbO5dFq9Kyas=
+# ENV AUTH_API_PORT=8081 \
+#     USERS_API_ADDRESS=http://user:8083 \
+#     JWT_SECRET=DZ5O1JxC96rER4wsvh4r2/bLPKhnrl2TbO5dFq9Kyas=
 
 # Run the application
 CMD ["./auth-api"]

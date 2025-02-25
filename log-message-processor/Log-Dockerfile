@@ -38,9 +38,9 @@ COPY . .
 EXPOSE 8000
 
 # Set environment variables
-ENV REDIS_HOST=redis \
-    REDIS_PORT=6379 \
-    REDIS_CHANNEL=log_channel
+# ENV REDIS_HOST=redis \
+#     REDIS_PORT=6379 \
+#     REDIS_CHANNEL=log_channel
 
 # Run the application
 CMD ["python3", "main.py"]
