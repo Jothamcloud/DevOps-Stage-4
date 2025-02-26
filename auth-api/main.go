@@ -46,7 +46,7 @@ func main() {
 	e.Logger.SetLevel(gommonlog.INFO)
 
 	if zipkinURL := os.Getenv("ZIPKIN_URL"); len(zipkinURL) != 0 {
-		e.Logger.Infof("init tracing to Zipkit at %s", zipkinURL)
+		e.Logger.Infof("init tracing to Zipkin at %s", zipkinURL)
 
 		if tracedMiddleware, tracedClient, err := initTracing(zipkinURL); err == nil {
 			e.Use(echo.WrapMiddleware(tracedMiddleware))
