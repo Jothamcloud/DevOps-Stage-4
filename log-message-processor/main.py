@@ -4,8 +4,11 @@ import os
 import json
 import requests
 from py_zipkin.zipkin import zipkin_span, ZipkinAttrs, generate_random_64bit_string
-import time
 import random
+import sys
+
+# Force unbuffered output
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', buffering=1)
 
 def log_message(message):
     time_delay = random.randrange(0, 2000)
@@ -56,7 +59,3 @@ if __name__ == '__main__':
         except Exception as e:
             print('did not send data to Zipkin: {}'.format(e))
             log_message(message)
-
-
-
-
