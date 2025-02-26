@@ -1,49 +1,31 @@
 version: "3.8"
 
 services:
-  traefik:
-    image: traefik:v3.1.6
-    container_name: traefik
-    restart: unless-stopped
-    command:
-      - "--api.dashboard=true"                     # Enable Traefik's dashboard
-      - "--api.insecure=true"  # Optional: Only for local testing. Use secure access in production.
-      - "--providers.docker=true"                  # Enable Docker provider to discover containers
-      - "--entrypoints.web.address=:80"            # Define HTTP entrypoint
-      - "--entrypoints.websecure.address=:443"     # Define HTTPS entrypoint
-      - "--certificatesresolvers.mytls.acme.tlschallenge=true"  # Enable TLS challenge for certs
-      - "--certificatesresolvers.mytls.acme.email=incriszluv@gmail.com"  # Your email for ACME
-      - "--certificatesresolvers.mytls.acme.storage=/letsencrypt/acme.json"  # Store certs and ensures renewal
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"  # Redirect HTTP to HTTPS
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"  # Ensure redirection uses HTTPS
-    
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
     ports:
-      - "80:80"      # Expose HTTP port
-      - "443:443"    # Expose HTTPS port
-      # - "8080:8080"  # Expose dashboard on port 8080
+      - "6379:6379"
+    env_file:
+      - .env
 
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"  # Docker socket for Traefik to access containers
-      - "./letsencrypt:/letsencrypt"   
-
-  frontend:
+  users:
     build:
-      context: ./frontend
-      dockerfile: Frontend-Dockerfile
-    container_name: frontend
+      context: ./users-api
+      dockerfile: User-Dockerfile
+    container_name: user
     ports:
-      - "8080:80"
-      # - "9411:9411"
+      - "8083:8083"
     env_file:
       - .env
     depends_on:
-      - auth
-      - todo
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.entrypoints=websecure"    # Ensure traffic is served over HTTPS
-      - "traefik.http.routers.frontend.rule=Host(`bmp.com.ng`)"  # Domain for the frontend service
-      - "traefik.http.routers.frontend.tls.certresolver=mytls"   # Use ACME resolver for SSL certs
+      - redis
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.users.entrypoints=websecure"
+    #   - "traefik.http.routers.users.rule=Host(`users.bmp.com.ng`)"
+    #   - "traefik.http.routers.users.tls.certresolver=mytls"
 
   auth:
     build:
@@ -56,11 +38,11 @@ services:
       - .env
     depends_on:
       - users
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auth.entrypoints=websecure"    # Ensure traffic is served over HTTPS
-      - "traefik.http.routers.auth.rule=Host(`auth.bmp.com.ng`)"  # Domain for the auth service
-      - "traefik.http.routers.auth.tls.certresolver=mytls"   # Use ACME resolver for SSL certs
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.auth.entrypoints=websecure"
+    #   - "traefik.http.routers.auth.rule=Host(`auth.bmp.com.ng`)"
+    #   - "traefik.http.routers.auth.tls.certresolver=mytls"
 
   todo:
     build:
@@ -72,27 +54,13 @@ services:
     env_file:
       - .env
     depends_on:
+      - auth
       - redis
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.todos.entrypoints=websecure"    # Ensure traffic is served over HTTPS
-      - "traefik.http.routers.todos.rule=Host(`todos.bmp.com.ng`)"  # Domain for the todos service
-      - "traefik.http.routers.todos.tls.certresolver=mytls"   # Use ACME resolver for SSL certs
-
-  users:
-    build:
-      context: ./users-api
-      dockerfile: User-Dockerfile
-    container_name: user
-    ports:
-      - "8083:8083"
-    env_file:
-      - .env
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.users.entrypoints=websecure"    # Ensure traffic is served over HTTPS
-      - "traefik.http.routers.users.rule=Host(`users.bmp.com.ng`)"  # Domain for the users service
-      - "traefik.http.routers.users.tls.certresolver=mytls"   # Use ACME resolver for SSL certs
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.todos.entrypoints=websecure"
+    #   - "traefik.http.routers.todos.rule=Host(`todos.bmp.com.ng`)"
+    #   - "traefik.http.routers.todos.tls.certresolver=mytls"
 
   log-processor:
     build:
@@ -102,26 +70,49 @@ services:
     env_file:
       - .env
     depends_on:
+      - todo
       - redis
 
-  redis:
-    image: redis:alpine
-    container_name: redis
-    restart: always
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Frontend-Dockerfile
+    container_name: frontend
     ports:
-      - "6379:6379"
+      - "8080:80"
     env_file:
       - .env
+    depends_on:
+      - log-processor
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.frontend.entrypoints=websecure"
+    #   - "traefik.http.routers.frontend.rule=Host(`bmp.com.ng`)"
+    #   - "traefik.http.routers.frontend.tls.certresolver=mytls"
 
-  # zipkin:
-  #   image: openzipkin/zipkin
-  #   container_name: zipkin
+  # traefik:
+  #   image: traefik:v3.1.6
+  #   container_name: traefik
+  #   restart: unless-stopped
+  #   command:
+  #     - "--api.dashboard=true"
+  #     - "--api.insecure=true"
+  #     - "--providers.docker=true"
+  #     - "--entrypoints.web.address=:80"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--certificatesresolvers.mytls.acme.tlschallenge=true"
+  #     - "--certificatesresolvers.mytls.acme.email=incriszluv@gmail.com"
+  #     - "--certificatesresolvers.mytls.acme.storage=/letsencrypt/acme.json"
+  #     - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+  #     - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    
   #   ports:
-  #     - "9411:9411"
-  #   env_file:
-  #     - .env
+  #     - "80:80"
+  #     - "443:443"
 
- 
+  #   volumes:
+  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  #     - "./letsencrypt:/letsencrypt"   
 
 networks:
   default:
