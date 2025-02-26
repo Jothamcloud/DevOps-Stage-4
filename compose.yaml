@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   # Frontend (Vue.js)
   frontend:
@@ -5,7 +7,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"  # Changed to 8080 per .env
+      - "8080:8080"
     environment:
       - PORT=8080
       - AUTH_API_ADDRESS=http://auth-api:8081
@@ -14,7 +16,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`oluwatobiloba.tech`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
     networks:
       - app-network
     depends_on:
@@ -36,7 +38,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth-api.rule=Host(`auth.oluwatobiloba.tech`) || PathPrefix(`/auth`)"
       - "traefik.http.routers.auth-api.entrypoints=websecure"
-      - "traefik.http.routers.auth-api.tls=true"
+      - "traefik.http.routers.auth-api.tls.certresolver=myresolver"
     networks:
       - app-network
     depends_on:
@@ -60,7 +62,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.todos-api.rule=Host(`todos.oluwatobiloba.tech`) || PathPrefix(`/todos`)"
       - "traefik.http.routers.todos-api.entrypoints=websecure"
-      - "traefik.http.routers.todos-api.tls=true"
+      - "traefik.http.routers.todos-api.tls.certresolver=myresolver"
     networks:
       - app-network
     depends_on:
@@ -80,7 +82,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.users-api.rule=Host(`users.oluwatobiloba.tech`) || PathPrefix(`/users`)"
       - "traefik.http.routers.users-api.entrypoints=websecure"
-      - "traefik.http.routers.users-api.tls=true"
+      - "traefik.http.routers.users-api.tls.certresolver=myresolver"
     networks:
       - app-network
 
@@ -119,7 +121,7 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--certificatesresolvers.myresolver.acme.email=nowonlywork@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"  # Using http challenge for reliability
     ports:
       - "80:80"
       - "443:443"
@@ -130,6 +132,7 @@ services:
     networks:
       - app-network
 
+  # Zipkin
   zipkin:
     image: openzipkin/zipkin
     networks:
@@ -140,3 +143,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  letsencrypt:
