@@ -1,0 +1,135 @@
+version: "3.8"
+
+services:
+  # Frontend (Vue.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"  # Changed to 8080 per .env
+    environment:
+      - PORT=8080
+      - AUTH_API_ADDRESS=http://auth-api:8081
+      - TODOS_API_ADDRESS=http://todos-api:8082
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`chinonso.pro`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+    networks:
+      - app-network
+    depends_on:
+      - auth-api
+      - todos-api
+
+  # Auth API (Go)
+  auth-api:
+    build:
+      context: ./auth-api
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - AUTH_API_PORT=8081
+      - JWT_SECRET=myfancysecret
+      - USERS_API_ADDRESS=http://users-api:8083
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-api.rule=Host(`auth.chinonso.pro`) || PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth-api.entrypoints=websecure"
+      - "traefik.http.routers.auth-api.tls=true"
+    networks:
+      - app-network
+    depends_on:
+      - users-api
+
+  # Todos API (Node.js)
+  todos-api:
+    build:
+      context: ./todos-api
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - TODO_API_PORT=8082  # Note: README says TODO_API_PORT, not just PORT
+      - JWT_SECRET=myfancysecret
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos-api.rule=Host(`todos.chinonso.pro`) || PathPrefix(`/api/todos`)"
+      - "traefik.http.routers.todos-api.entrypoints=websecure"
+      - "traefik.http.routers.todos-api.tls=true"
+    networks:
+      - app-network
+    depends_on:
+      - redis-queue
+
+  # Users API (Java/Spring Boot)
+  users-api:
+    build:
+      context: ./users-api
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVER_PORT=8083
+      - JWT_SECRET=myfancysecret
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users-api.rule=Host(`users.chinonso.pro`) || PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users-api.entrypoints=websecure"
+      - "traefik.http.routers.users-api.tls=true"
+    networks:
+      - app-network
+
+  # Log Message Processor (Python)
+  log-message-processor:
+    build:
+      context: ./log-message-processor
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+    networks:
+      - app-network
+    depends_on:
+      - redis-queue
+
+  # Redis Queue
+  redis-queue:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"  # Remove in production
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.myresolver.acme.email=nwakudue@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8088:8080"  # Traefik dashboard
+    volumes:
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

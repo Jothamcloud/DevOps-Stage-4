@@ -1,0 +1,19 @@
+# Redis database snapshot
+dump.rdb
+
+# Traefik SSL/TLS certificates
+acme.json
+
+# Node.js dependencies (already ignored by default)
+node_modules/
+
+# Python virtual environment
+venv/
+.env
+
+# Build artifacts
+dist/
+build/
+
+# Log files
+*.log
