@@ -39,6 +39,7 @@ services:
       - "traefik.http.routers.auth-api.rule=Host(`auth.oluwatobiloba.tech`) || PathPrefix(`/auth`)"
       - "traefik.http.routers.auth-api.entrypoints=websecure"
       - "traefik.http.routers.auth-api.tls.certresolver=myresolver"
+      - "traefik.http.services.auth-api.loadbalancer.server.port=8081"  # Ensure correct port
     networks:
       - app-network
     depends_on:
@@ -115,13 +116,22 @@ services:
       - "--api.insecure=true"  # Remove in production
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--log.level=DEBUG"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--certificatesresolvers.myresolver.acme.email=nowonlywork@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"  # Using http challenge for reliability
+      - "--certificatesresolvers.myresolver.acme.httpChallenge.entrypoint=web"
+    labels:
+      - "traefik.http.middlewares.acme-exclude.stripprefix.prefixes=/.well-known/acme-challenge"
+      - "traefik.http.routers.acme-exclude.rule=PathPrefix(`/.well-known/acme-challenge`)"
+      - "traefik.http.routers.acme-exclude.entrypoints=web"
+      - "traefik.http.routers.acme-exclude.middlewares=acme-exclude@docker"
+      - "traefik.http.middlewares.redirect-web-to-websecure.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-web-to-websecure.redirectscheme.permanent=true"
+      - "traefik.http.routers.web-to-websecure.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.web-to-websecure.entrypoints=web"
+      - "traefik.http.routers.web-to-websecure.middlewares=redirect-web-to-websecure@docker"
     ports:
       - "80:80"
       - "443:443"
