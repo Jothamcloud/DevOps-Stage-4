@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  # Redis service
+  redis-queue:
+    image: redis:alpine
+    networks:
+      - backend
+    volumes:
+      - redis-data:/data
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      - PORT=8080
+      - AUTH_API_ADDRESS=http://auth-api:8081
+      - TODOS_API_ADDRESS=http://todos-api:8082
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`samops.name.ng`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+    networks:
+      - frontend
+    depends_on:
+      - auth-api
+      - todos-api
+      - users-api
+
+  # Auth API
+  auth-api:
+    build:
+      context: .
+      dockerfile: auth-api/Dockerfile
+    environment:
+      - AUTH_API_PORT=8081
+      - JWT_SECRET=myfancysecret
+      - USERS_API_ADDRESS=http://users-api:8083
+    ports:
+      - "8081:8081"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.samops.name.ng`) || (Host(`samops.name.ng`) && PathPrefix(`/api/auth`))"
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth"
+      - "traefik.http.routers.auth.middlewares=auth-stripprefix@docker"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - users-api
+
+  # Todos API
+  todos-api:
+    build:
+      context: .
+      dockerfile: todos-api/Dockerfile
+    environment:
+      - JWT_SECRET=myfancysecret
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+    ports:
+      - "8082:8082"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos.rule=Host(`todos.samops.name.ng`) || (Host(`samops.name.ng`) && PathPrefix(`/api/todos`))"
+      - "traefik.http.routers.todos.entrypoints=websecure"
+      - "traefik.http.routers.todos.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.todos-stripprefix.stripprefix.prefixes=/api/todos"
+      - "traefik.http.routers.todos.middlewares=todos-stripprefix@docker"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - redis-queue
+      - auth-api
+
+  # Users API
+  users-api:
+    build:
+      context: .
+      dockerfile: users-api/Dockerfile
+    environment:
+      - SERVER_PORT=8083
+      - JWT_SECRET=myfancysecret
+    ports:
+      - "8083:8083"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users.rule=Host(`users.samops.name.ng`) || (Host(`samops.name.ng`) && PathPrefix(`/api/users`))"
+      - "traefik.http.routers.users.entrypoints=websecure"
+      - "traefik.http.routers.users.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.users-stripprefix.stripprefix.prefixes=/api/users"
+      - "traefik.http.routers.users.middlewares=users-stripprefix@docker"
+    networks:
+      - frontend
+      - backend
+
+  # Log Message Processor
+  log-processor:
+    build:
+      context: .
+      dockerfile: log-message-processor/Dockerfile
+    environment:
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+    networks:
+      - backend
+    depends_on:
+      - redis-queue
+
+  # Traefik as reverse proxy with SSL
+  traefik:
+    image: traefik:v2.9
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=oyedejisamuel05@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - frontend
+    restart: always
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  redis-data:
