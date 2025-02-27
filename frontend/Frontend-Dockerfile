@@ -33,12 +33,9 @@ RUN rm -rf ./*
 COPY --from=build-stage /app/dist ./
 
 
-# Expose port 80
-EXPOSE 80
+# Expose port 8080
+EXPOSE 8080
 
-# ENV PORT=80 \
-#     AUTH_API_ADDRESS=http://auth:8081 \
-#     TODOS_API_ADDRESS=http://todo:8082
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
