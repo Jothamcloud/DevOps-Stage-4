@@ -1,0 +1,103 @@
+
+version: '3.8'
+
+services:
+  traefik:
+    image: "traefik:v2.11"
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=mabirhire1@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - app-network
+    labels:
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.mercyabi.name.ng`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+
+  frontend:
+    build: ./frontend
+    env_file: .env
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`mercyabi.name.ng`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+
+  auth-api:
+    build: ./auth-api
+    env_file: .env
+    ports:
+      - "8081:8081"
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`mercyabi.name.ng`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.tls.certresolver=myresolver"
+      - "traefik.http.services.auth.loadbalancer.server.port=8081"
+      - "traefik.http.middlewares.strip-auth.stripprefix.prefixes=/api/auth"
+      - "traefik.http.routers.auth.middlewares=strip-auth"
+
+  todos-api:
+    build: ./todos-api
+    env_file: .env
+    ports:
+      - "8082:8082"
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos.rule=Host(`mercyabi.name.ng`) && PathPrefix(`/api/todos`)"
+      - "traefik.http.routers.todos.entrypoints=websecure"
+      - "traefik.http.routers.todos.tls.certresolver=myresolver"
+      - "traefik.http.services.todos.loadbalancer.server.port=8082"
+      - "traefik.http.middlewares.strip-todos.stripprefix.prefixes=/api/todos"
+      - "traefik.http.routers.todos.middlewares=strip-todos"
+
+  users-api:
+    build: ./users-api
+    env_file: .env
+    ports:
+      - "8083:8083"
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users.rule=Host(`mercyabi.name.ng`) && PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users.entrypoints=websecure"
+      - "traefik.http.routers.users.tls.certresolver=myresolver"
+      - "traefik.http.services.users.loadbalancer.server.port=8083"
+      - "traefik.http.middlewares.strip-users.stripprefix.prefixes=/api/users"
+      - "traefik.http.routers.users.middlewares=strip-users"
+
+  redis-queue:
+    image: redis:alpine
+    networks:
+      - app-network
+
+  log-message-processor:
+    build: ./log-message-processor
+    env_file: .env
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
