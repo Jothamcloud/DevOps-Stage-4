@@ -1,4 +1,3 @@
-
 version: '3.8'
 
 services:
@@ -31,6 +30,10 @@ services:
     env_file: .env
     ports:
       - "8080:8080"
+    environment:
+      - PORT=${PORT}
+      - AUTH_API_ADDRESS=${AUTH_API_ADDRESS}
+      - TODOS_API_ADDRESS=${TODOS_API_ADDRESS}  
     networks:
       - app-network
     labels:
@@ -44,6 +47,10 @@ services:
     env_file: .env
     ports:
       - "8081:8081"
+    environment:
+      - PORT=${AUTH_API_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - USERS_API_ADDRESS=${USERS_API_ADDRESS}
     networks:
       - app-network
     labels:
@@ -60,14 +67,20 @@ services:
     env_file: .env
     ports:
       - "8082:8082"
-    networks:
+    environment:
+      - PORT=${TODOS_API_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_CHANNEL=${REDIS_CHANNEL
+  networks:
       - app-network
-    labels:
+  labels:
       - "traefik.enable=true"
       - "traefik.http.routers.todos.rule=Host(`mercyabi.name.ng`) && PathPrefix(`/api/todos`)"
       - "traefik.http.routers.todos.entrypoints=websecure"
       - "traefik.http.routers.todos.tls.certresolver=myresolver"
-      - "traefik.http.services.todos.loadbalancer.server.port=8082"
+      - "traefik.http.services.todos.loadbalancer.server.port=${AUTH_API_PORT}"
       - "traefik.http.middlewares.strip-todos.stripprefix.prefixes=/api/todos"
       - "traefik.http.routers.todos.middlewares=strip-todos"
 
@@ -76,6 +89,9 @@ services:
     env_file: .env
     ports:
       - "8083:8083"
+    environment:
+      - PORT=${SERVER_PORT}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - app-network
     labels:
@@ -83,7 +99,7 @@ services:
       - "traefik.http.routers.users.rule=Host(`mercyabi.name.ng`) && PathPrefix(`/api/users`)"
       - "traefik.http.routers.users.entrypoints=websecure"
       - "traefik.http.routers.users.tls.certresolver=myresolver"
-      - "traefik.http.services.users.loadbalancer.server.port=8083"
+      - "traefik.http.services.users.loadbalancer.server.port=${SERVER_PORT}"
       - "traefik.http.middlewares.strip-users.stripprefix.prefixes=/api/users"
       - "traefik.http.routers.users.middlewares=strip-users"
 
@@ -95,6 +111,10 @@ services:
   log-message-processor:
     build: ./log-message-processor
     env_file: .env
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_CHANNEL=${REDIS_CHANNEL}
     networks:
       - app-network
 
