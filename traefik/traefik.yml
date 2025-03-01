@@ -1,0 +1,19 @@
+api:
+  dashboard: true  # Enables the Traefik dashboard (optional)
+
+entryPoints:
+  web:
+    address: ":80"  # Handles HTTP
+  websecure:
+    address: ":443"  # Handles HTTPS
+
+providers:
+  docker:
+    exposedByDefault: false  # Only route containers with traefik.enable=true
+
+certificatesResolvers:
+  myresolver:
+    acme:
+      email: "mk@tumingle.com"
+      storage: "/letsencrypt/acme.json"
+      tlsChallenge: {}
