@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    command:
+      - "--configFile=/traefik.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik.yml:/traefik.yml"
+      - "./letsencrypt:/letsencrypt"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`nemyred.xyz`) && PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+    networks:
+      - web
+
+  frontend:
+    build: ./frontend
+    container_name: vue_frontend
+    expose:
+      - "80"
+    env_file:
+      - .env  # Ensure .env with updated AUTH_API_ADDRESS is used
+    environment:
+      - NODE_ENV=production  # Force production mode to use correct env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`nemyred.xyz`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    networks:
+      - web
+    depends_on:
+      - auth-api
+      - todos-api
+
+  auth-api:
+    build: ./auth-api
+    container_name: auth_api
+    expose:
+      - "8081"
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`nemyred.xyz`) && (PathPrefix(`/api/auth`) || PathPrefix(`/login`))"  # Fallback for /login
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.tls=true"
+      - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.auth.middlewares=auth-strip"
+      - "traefik.http.middlewares.auth-strip.stripprefix.prefixes=/api/auth"  # Only strip /api/auth, not /login
+      - "traefik.http.services.auth.loadbalancer.server.port=8081"
+    networks:
+      - web
+    depends_on:
+      - users-api
+
+  todos-api:
+    build: ./todos-api
+    container_name: todos_api
+    expose:
+      - "8082"
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos.rule=Host(`nemyred.xyz`) && PathPrefix(`/api/todos`)"
+      - "traefik.http.routers.todos.entrypoints=websecure"
+      - "traefik.http.routers.todos.tls=true"
+      - "traefik.http.routers.todos.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.todos.middlewares=todos-strip"
+      - "traefik.http.middlewares.todos-strip.stripprefix.prefixes=/api/todos"
+      - "traefik.http.services.todos.loadbalancer.server.port=8082"
+    networks:
+      - web
+    depends_on:
+      - redis
+
+  users-api:
+    build: ./users-api
+    container_name: users_api
+    expose:
+      - "8083"
+    env_file:
+      - .env
+    environment:
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users.rule=Host(`nemyred.xyz`) && PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users.entrypoints=websecure"
+      - "traefik.http.routers.users.tls=true"
+      - "traefik.http.routers.users.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.users.middlewares=users-strip"
+      - "traefik.http.middlewares.users-strip.stripprefix.prefixes=/api/users"
+      - "traefik.http.services.users.loadbalancer.server.port=8083"
+    networks:
+      - web
+    depends_on:
+      - redis
+
+  log-message-processor:
+    build: ./log-message-processor
+    container_name: log_processor
+    env_file:
+      - .env
+    networks:
+      - web
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: devops-stage-4-redis-1
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
