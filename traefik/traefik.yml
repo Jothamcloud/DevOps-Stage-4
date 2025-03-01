@@ -1,0 +1,33 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+# Entry points for HTTP and HTTPS
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: "websecure"
+          scheme: "https"
+  websecure:
+    address: ":443"
+
+# Configure automatic certificate generation using Let's Encrypt
+certificatesResolvers:
+  lets-encrypt:
+    acme:
+      email: "abdulqadirololade1@gmail.com"
+      storage: "/acme.json"
+      dnsChallenge:
+        provider: cloudflare
+
+
+# Define Traefik as the provider and enable Docker backend
+providers:
+  docker:
+    exposedByDefault: false
+  file:
+    directory: "/etc/traefik/dynamic"
+    watch: true

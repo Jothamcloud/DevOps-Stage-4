@@ -1,0 +1,104 @@
+services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"    # HTTP
+      - "443:443"  # HTTPS
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./traefik/acme.json:/acme.json
+    environment:
+      - CF_API_EMAIL=your-email@example.com
+      - CF_API_KEY=your-cloudflare-api-key
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - PORT=8080
+        - AUTH_API_ADDRESS=http://auth-api:8081
+        - TODOS_API_ADDRESS=http://todos-api:8082
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`domain.com`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=lets-encrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=8080
+
+
+  auth-api:
+    build:
+      context: ./auth-api
+      args:
+        - AUTH_API_PORT=8081
+        - JWT_SECRET=myfancysecret
+        - USERS_API_ADDRESS=http://users-api:8083
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-api.rule=Host(`auth.domain.com`)"
+      - "traefik.http.routers.auth-api.entrypoints=websecure"
+      - "traefik.http.routers.auth-api.tls.certresolver=lets-encrypt"
+      - "traefik.http.services.auth-api.loadbalancer.server.port=8081
+
+  todos-api:
+    build:
+      context: ./todos-api
+      args:
+        - JWT_SECRET=myfancysecret
+        - REDIS_HOST=redis-queue
+        - REDIS_PORT=6379
+        - REDIS_CHANNEL=log-channel
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos-api.rule=Host(`todos.domain.com`)"
+      - "traefik.http.routers.todos-api.entrypoints=websecure"
+      - "traefik.http.routers.todos-api.tls.certresolver=lets-encrypt"
+      - "traefik.http.services.todos-api.loadbalancer.server.port=8082"
+
+
+  users-api:
+    build:
+      context: ./users-api
+      args:
+        - SERVER_PORT=8083
+        - JWT_SECRET=myfancysecret
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users-api.rule=Host(`users.domain.com`)"
+      - "traefik.http.routers.users-api.entrypoints=websecure"
+      - "traefik.http.routers.users-api.tls.certresolver=lets-encrypt"
+      - "traefik.http.services.users-api.loadbalancer.server.port=8083
+
+
+  log-processor:
+    build:
+      context: ./log-processor
+      args:
+        - REDIS_HOST=redis-queue
+        - REDIS_PORT=6379
+        - REDIS_CHANNEL=log-channel
+    restart: always
+
+  redis-queue:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+networks:
+  default:
+    name: app-network
+    driver: bridge
+
+environment:
+  - CF_API_EMAIL=abdulqadirololade1@gmail.com
+  - CF_API_KEY=your-cloudflare-api-key
