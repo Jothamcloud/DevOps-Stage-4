@@ -1,13 +1,31 @@
 api:
   dashboard: true
-  insecure: true
+  insecure: true # For testing only (not recommended for production)
 
 entryPoints:
   web:
     address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
   websecure:
     address: ":443"
 
 providers:
-  docker: {}
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: web # Ensure Traefik uses the correct Docker network
 
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: ndiwechi1@gmail.com
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+log:
+  level: DEBUG # Enable debug logs for troubleshooting
