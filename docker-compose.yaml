@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik.yml:/traefik.yml"
+    networks:
+      - web
+
+  frontend:
+    build: ./frontend
+    container_name: vue_frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`3.84.100.53`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    networks:
+      - web
+
+  auth-api:
+    build: ./auth-api
+    container_name: auth_api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`3.84.100.53`) && PathPrefix(`/auth`)"
+      - "traefik.http.services.auth.loadbalancer.server.port=8080"
+    networks:
+      - web
+
+  todos-api:
+    build: ./todos-api
+    container_name: todos_api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos.rule=Host(`3.84.100.53`) && PathPrefix(`/todos`)"
+      - "traefik.http.services.todos.loadbalancer.server.port=3000"
+    networks:
+      - web
+
+  users-api:
+    build: ./users-api
+    container_name: users_api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users.rule=Host(`3.84.100.53`) && PathPrefix(`/users`)"
+      - "traefik.http.services.users.loadbalancer.server.port=8083"
+    networks:
+      - web
+
+  log-message-processor:
+    build: ./log-message-processor
+    container_name: log_processor
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+
